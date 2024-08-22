@@ -9,7 +9,7 @@ export interface ISpfxcentresWebPartProps {}
 export interface ICentresItem {
   Id: number;
   Title: string;
-  Respite: boolean;
+  Respite: boolean;  // Keep Respite as a boolean
 }
 
 export default class SpfxcentresWebPart extends BaseClientSideWebPart<ISpfxcentresWebPartProps> {
@@ -52,7 +52,7 @@ export default class SpfxcentresWebPart extends BaseClientSideWebPart<ISpfxcentr
             <tr>
               <td>${item.Id}</td>
               <td>${item.Title}</td>
-              <td>${item.Respite ? 'Yes' : 'No'}</td>
+              <td>${item.Respite}</td> <!-- Keep the boolean value -->
             </tr>`;
         });
 

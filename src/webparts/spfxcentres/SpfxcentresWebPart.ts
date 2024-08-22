@@ -1,11 +1,7 @@
 import { Version } from '@microsoft/sp-core-library';
 import { IPropertyPaneConfiguration } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
-import { spfi, SPFx } from "@pnp/sp";
-import "@pnp/sp/webs";
-import "@pnp/sp/lists";
-import "@pnp/sp/items";
-
+import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import styles from './SpfxcentresWebPart.module.scss';
 
 export interface ISpfxcentresWebPartProps {}
@@ -17,8 +13,6 @@ export interface ICentresItem {
 }
 
 export default class SpfxcentresWebPart extends BaseClientSideWebPart<ISpfxcentresWebPartProps> {
-
-  private sp = spfi().using(SPFx(this.context));
 
   public render(): void {
     this.domElement.innerHTML = `
@@ -44,21 +38,30 @@ export default class SpfxcentresWebPart extends BaseClientSideWebPart<ISpfxcentr
 
   private async _fetchAndRenderListItems(): Promise<void> {
     try {
-      const items: ICentresItem[] = await this.sp.web.lists.getByTitle('Centres').items.select('Id', 'Title', 'Respite')();
+      const url = `${this.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('Centres')/items?$select=Id,Title,Respite`;
+      
+      const response: SPHttpClientResponse = await this.context.spHttpClient.get(url, SPHttpClient.configurations.v1);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const items: ICentresItem[] = data.value;
 
-      let html: string = '';
-      items.forEach((item: ICentresItem) => {
-        html += `
-          <tr>
-            <td>${item.Id}</td>
-            <td>${item.Title}</td>
-            <td>${item.Respite ? 'Yes' : 'No'}</td>
-          </tr>`;
-      });
+        let html: string = '';
+        items.forEach((item: ICentresItem) => {
+          html += `
+            <tr>
+              <td>${item.Id}</td>
+              <td>${item.Title}</td>
+              <td>${item.Respite ? 'Yes' : 'No'}</td>
+            </tr>`;
+        });
 
-      const listContainer: Element | null = this.domElement.querySelector('#centresTableBody');
-      if (listContainer) {
-        listContainer.innerHTML = html;
+        const listContainer: Element | null = this.domElement.querySelector('#centresTableBody');
+        if (listContainer) {
+          listContainer.innerHTML = html;
+        }
+      } else {
+        console.error(`Error fetching list items: ${response.statusText}`);
       }
     } catch (error) {
       console.error('Error fetching list items:', error);
